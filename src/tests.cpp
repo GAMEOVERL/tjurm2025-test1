@@ -7,7 +7,12 @@ int my_strlen(char *str) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+    int length =0;
+    while(str[length]!='\0')
+    {
+        length++;
+    }
+    return length;
 }
 
 
@@ -19,6 +24,17 @@ void my_strcat(char *str_1, char *str_2) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+    while( *str_1!='\0')
+    {
+        str_1++;
+    }
+    while(*str_2!='\0')
+    {
+        *str_1=*str_2;
+        str_1++;
+        str_2++;
+    }
+    *str_1='\0';
 }
 
 
@@ -31,8 +47,34 @@ char* my_strstr(char *s, char *p) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    return 0;
+    if (*p == '\0')
+     {
+        return s; 
+    }
+    int len = 0;
+    while (p[len] != '\0')
+    {
+        len++;
+    }
+    for (int i = 0; s[i] != '\0'; i++)
+     {
+        bool match = true;
+        for (int j = 0; j < len; j++)
+         {
+            if (s[i + j] != p[j])
+             {
+                match = false; 
+                break; 
+            }
+        }
+        if (match) {
+            return &s[i]; 
+        }
+    }
+    return nullptr; 
 }
+
+
 
 
 /**
@@ -96,8 +138,24 @@ void rgb2gray(float *in, float *out, int h, int w) {
      */
 
     // IMPLEMENT YOUR CODE HERE
-    // ...
+    // 遍历每个像素
+    for (int i = 0; i < h; i++)
+     {
+        for (int j = 0; j < w; j++) 
+        {
+            int index = (i * w + j) * 3; 
+            float R = in[index];         
+            float G = in[index + 1];     
+            float B = in[index + 2];     
+
+            
+            out[i * w + j] = 0.2989f * R + 0.5870f * G + 0.1140f * B;
+        }
+    }
 }
+
+    // ...
+
 
 // 练习5，实现图像处理算法 resize：缩小或放大图像
 void resize(float *in, float *out, int h, int w, int c, float scale) {
@@ -197,9 +255,49 @@ void resize(float *in, float *out, int h, int w, int c, float scale) {
      */
 
     int new_h = h * scale, new_w = w * scale;
-    // IMPLEMENT YOUR CODE HERE
 
+    for (int i = 0; i < new_h; ++i) {
+        for (int j = 0; j < new_w; ++j) {
+           
+            float x0 = j / scale;
+            float y0 = i / scale;
+
+            int x1 = static_cast<int>(x0);
+            int y1 = static_cast<int>(y0);
+
+            
+            float dx = x0 - x1;
+            float dy = y0 - y1;
+
+
+          if (x1 >= w - 1 || y1 >= h - 1 || x1 < 0 || y1 < 0) {
+
+	for (int k = 0; k < c; ++k) {
+		out[(i * new_w + j) * c + k] = 0.0f;
+	}
+	continue;
 }
+           
+           
+            float P1 = in[(y1 * w + x1) * c];        
+            float P2 = in[(y1 * w + x1 + 1) * c];    
+            float P3 = in[((y1 + 1) * w + x1) * c];  
+            float P4 = in[((y1 + 1) * w + x1 + 1) * c]; 
+
+        
+            for (int k = 0; k < c; ++k) {
+                out[(i * new_w + j) * c + k] = 
+                    P1 * (1 - dx) * (1 - dy) +
+                    P2 * dx * (1 - dy) +
+                    P3 * (1 - dx) * dy +
+                    P4 * dx * dy;
+            }
+        }
+    }
+}
+
+
+
 
 
 // 练习6，实现图像处理算法：直方图均衡化
@@ -221,4 +319,48 @@ void hist_eq(float *in, int h, int w) {
      */
 
     // IMPLEMENT YOUR CODE HERE
+  
+    // 步骤 1: 计算直方图
+    int hist[256] = {0}; // 用于存储每个灰度级的频数
+
+    // 统计每个灰度值的出现次数
+    for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+            int gray_value = static_cast<int>(in[i * w + j]); // 假设输入灰度图像的值在 [0, 255]
+            hist[gray_value]++;
+        }
+    }
+
+    // 步骤 2: 计算累积分布函数（CDF）
+    float cdf[256] = {0}; // 用于存储累积分布
+
+    // 计算 CDF
+    cdf[0] = hist[0];
+    for (int i = 1; i < 256; i++) {
+        cdf[i] = cdf[i - 1] + hist[i];
+    }
+
+    // 步骤 3: 归一化 CDF 并映射到新灰度值
+    float cdf_min = 0;
+    // 找到第一个非零的累积频率
+    for (int i = 0; i < 256; i++) {
+        if (cdf[i] > 0) {
+            cdf_min = cdf[i];
+            break;
+        }
+    }
+
+    // 使用新灰度值映射公式
+    for (int i = 0; i < 256; i++) {
+        cdf[i] = (cdf[i] - cdf_min) / (h * w - cdf_min) * 255; // 归一化到 [0, 255]
+    }
+
+    // 步骤 4: 更新原图像像素值为均衡化后的值
+    for (int i = 0; i < h; i++) {
+        for (int j = 0; j < w; j++) {
+            int gray_value = static_cast<int>(in[i * w + j]);
+            in[i * w + j] = cdf[gray_value]; // 用均衡化后的值替换原值
+        }
+    }
 }
+
